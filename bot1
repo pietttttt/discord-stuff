@@ -1,0 +1,39 @@
+import discord
+import os
+import requests
+import json
+
+client = discord.Client()
+required_role = "Admin"
+
+@client.event
+async def on_ready():
+    print('We have logged in as {0.user}'.format(client))
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    if message.content.startswith('/rank'):
+        if required_role in [role.name for role in message.author.roles]:
+            try:
+                rank_user = message.mentions[0]
+                rank = message.content.split()[2]
+                url = "https://api.roblox.com/users/get-by-username?username=" + rank_user.display_name
+                response = requests.get(url)
+                json_data = json.loads(response.text)
+                user_id = json_data["Id"]
+                group_id = YOUR_GROUP_ID_HERE
+                cookie = {"cookie": "YOUR_COOKIE_HERE"}
+
+                # Set the user's rank in the group
+                rank_url = f"https://www.roblox.com/groups/api/change-member-rank?groupId={group_id}&userId={user_id}&newRoleSetId={rank}"
+                rank_response = requests.post(rank_url, cookies=cookie)
+                await message.channel.send(f"{rank_user.display_name} has been set to rank {rank}.")
+            except IndexError:
+                await message.channel.send("Please mention a user.")
+        else:
+            await message.channel.send("You do not have the required role to use this command.")
+
+client.run('your_bot_token_here')
